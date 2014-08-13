@@ -5,6 +5,7 @@ var fs = require('fs');
 var modal = null;
 
 var handle_upload = function () {
+
     var file = this.files[0];
     var client = new XMLHttpRequest();
     var data = new FormData();
@@ -17,22 +18,22 @@ var handle_upload = function () {
     client.addEventListener('progress', function (oEvent) {
         if (oEvent.lengthComputable) {
             var percentComplete = oEvent.loaded / oEvent.total;
-            // ...
+            console.log('Progress: ' + percentComplete);
         } else {
-            // Unable to compute progress information since the total size is unknown
+            console.log('Unknown progress', oEvent);
         }
     }, false);
 
     client.addEventListener('load', function (evt) {
-        alert('The transfer is complete.');
+        console.log('The transfer is complete.');
     }, false);
 
     client.addEventListener('error', function transferFailed(evt) {
-        alert('An error occurred while transferring the file.');
+        console.log('An error occurred while transferring the file.');
     }, false);
 
     client.addEventListener('abort', function transferFailed(evt) {
-        alert('The transfer has been canceled by the user.');
+        console.log('The transfer has been canceled by the user.');
     }, false);
 };
 
@@ -60,8 +61,24 @@ var create_modal = function (on_select) {
         el: elem,
         template: fs.readFileSync(__dirname + '/templates/browser.html', 'utf8'),
         data: {
-            showForm: false,
+            drop: false,
             images: data
+        }
+    });
+
+    ractive.on('show-dropzone', function (event) {
+        this.set('drop', true);
+    });
+
+    ractive.on('hide-dropzone', function (event) {
+        this.set('drop', false);
+    });
+
+    ractive.on('filedrop', function (event) {
+        console.log(event);
+        if (event.original.dataTransfer && event.original.dataTransfer.files.length) {
+            event.original.preventDefault();
+            event.original.stopPropagation();
         }
     });
 
@@ -75,6 +92,11 @@ var create_modal = function (on_select) {
         input.click();
 
     });
+
+
+
+    //elem.addEventListener('drop', FileSelectHandler, false);
+    //filedrag.style.display = 'block';
 
 
 
