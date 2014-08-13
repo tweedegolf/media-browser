@@ -1,18 +1,38 @@
 
 
-#modal {
-  width: 530px;
-  .thumbnail {
-    .caption {
-      padding: 0;
-      height: 1.25em;
-      width: 100%;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      overflow: hidden;
+// fix modal over tinymce dialog order
+.modal-backdrop {
+  z-index: 65537;
+}
+.modal {
+  z-index: 65538;
+}
+
+#tg-media-modal {
+  .modal-dialog{
+    width: 800px;
+    max-width: 95%;
+    .modal-header, .modal-footer {
+      padding: 10px 15px;
+      .close {
+        .times {
+          font-size: 1.33333em;
+          line-height: 1.33333em;
+        }
+      }
     }
-    &:hover {
-      text-decoration: none;
+    .thumbnail {
+      .caption {
+        padding: 0;
+        height: 1.25em;
+        width: 100%;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        overflow: hidden;
+      }
+      &:hover {
+        text-decoration: none;
+      }
     }
   }
 }
