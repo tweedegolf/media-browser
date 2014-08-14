@@ -1,8 +1,8 @@
 
-<div class="modal-dialog" on-drop="filedrop">
+<div class="modal-dialog">
   <div class="modal-content">
     <div class="modal-header">
-      <button on-click="upload" class="btn btn-primary">
+      <button on-click="select-upload" class="btn btn-primary">
         <span class="fa fa-upload"></span>
         Upload
       </button>
@@ -11,11 +11,11 @@
       </button>
     </div>
     <div class="modal-body" on-dragenter="show-dropzone">
-      <div class="drop-zone {{^drop}}hide{{/drop}}" on-dragleave="hide-dropzone" on-drop="filedrop"></div>
+      <div class="drop-zone {{^drop}}hide{{/drop}}" on-dragleave="hide-dropzone" on-drop="drop" on-dragover="drag-over"></div>
       <div class="row">
         {{#images}}
         <div class="col-xs-6 col-md-3">
-          <a on-click="select" href="{{image}}" class="thumbnail">
+          <a on-click="select" href="{{path}}" class="thumbnail">
             <img src="{{thumb}}" alt="{{name}}">
             <div class="caption">
               {{name}}
