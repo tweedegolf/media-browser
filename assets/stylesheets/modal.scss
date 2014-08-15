@@ -10,9 +10,10 @@
 
 #tg-media-modal {
   .modal-dialog{
-    width: 800px;
+    width: 992px;
     max-width: 95%;
-    .drop-zone {
+    max-height: 95%;
+    .drop-zone, .loader {
       position: absolute;
       z-index: 1050;
       top: 0;
@@ -31,6 +32,10 @@
         content: "\f019";
       }
     }
+    .loader:before {
+      content: "\f021";
+      animation: spin 2s infinite linear;
+    }
     .modal-header, .modal-footer {
       padding: 10px 15px;
       .close {
@@ -40,17 +45,91 @@
         }
       }
     }
-    .thumbnail {
-      .caption {
-        padding: 0;
-        height: 1.25em;
-        width: 100%;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        overflow: hidden;
-      }
-      &:hover {
-        text-decoration: none;
+    .modal-body {
+      min-height: 300px;
+      .thumbnail {
+        background-color: #f6f6f6;
+        position: relative;
+        text-align: center;
+        min-height: 136px;
+
+        .fa.type {
+          font-size: 5em;
+        }
+
+        @media (min-width: $screen-sm-min) {
+          min-height: 180px;
+          .fa.type {
+            font-size: 8em;
+          }
+        }
+
+        @media (min-width: $screen-lg-min) {
+          min-height: 125px;
+          .fa.type {
+            font-size: 4.5em;
+          }
+        }
+
+        img {
+          margin-bottom: 20px;
+        }
+
+        .fa-trash-o {
+          display: none;
+          padding: 2px 4px;
+          margin: -2px -2px -2px 0;
+          &:hover {
+            background-color: $brand-danger;
+            color: white;
+            border-radius: $border-radius-small;
+          }
+        }
+
+        &:hover {
+          .fa-trash-o {
+            display: inline-block;
+          }
+        }
+
+        .fa.type {
+          margin-top: 10px;
+          &:before {
+            content: "\f016";
+          }
+          &.type-txt:before {
+            content: "\f1c3";
+          }
+          &.type-xls:before, &.type-xlsx:before {
+            content: "\f1c3";
+          }
+          &.type-pdf:before {
+            content: "\f1c1";
+          }
+          &.type-wav:before, &.type-mp3:before {
+            content: "\f1c7";
+          }
+          &.type-doc:before, &.type-docx:before {
+            content: "\f1c2";
+          }
+          &.type-zip:before, &.type-gz:before {
+            content: "\f1c6";
+          }
+        }
+        .caption {
+          position: absolute;
+          left: 0;
+          bottom: 4px;
+          padding: 0 4px;
+          height: 1.25em;
+          width: 100%;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          overflow: hidden;
+        }
+        &:hover {
+          text-decoration: none;
+        }
       }
     }
   }

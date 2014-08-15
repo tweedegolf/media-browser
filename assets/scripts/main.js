@@ -2,117 +2,229 @@ var $ = require('jquery');
 var Ractive = require('ractive');
 var fs = require('fs');
 
-var modal = null;
+var extend = function (defaults, options) {
+    var extended = Object.create(defaults);
+    Object.keys(options).map(function (prop) {
+        prop in extended && (extended[prop] = options[prop]);
+    });
+    return extended;
+};
 
-var create_modal = function (on_select) {
+var MediaBrowser = function (options) {
+    this.options = extend(MediaBrowser.DEFAULTS, options || {});
 
-    var handle_upload = function () {
+    this.init();
+    this.loadItems();
 
-        var file = this.files[0];
+    return this;
+};
 
-        var formData = new FormData();
-        formData.append('file', file);
+MediaBrowser.DEFAULTS = {
+    callback: null,
+    items: [],
+    insertOnUpload: false
+};
 
-        var client = new XMLHttpRequest();
-        client.open('POST', '/api/post', true);
-        //client.setRequestHeader('Content-Type', 'multipart/form-data');
-        client.send(formData);
+MediaBrowser.prototype.init = function () {
+    var browser = this;
 
-        client.addEventListener('progress', function (oEvent) {
-            if (oEvent.lengthComputable) {
-                var percentComplete = oEvent.loaded / oEvent.total;
-                console.log('Progress: ' + percentComplete);
-            } else {
-                console.log('Unknown progress', oEvent);
-            }
-        }, false);
+    this.element = document.createElement('div');
+    this.element.className = 'modal';
+    this.element.id = 'tg-media-modal';
 
-        client.addEventListener('load', function (evt) {
-            console.log('The transfer is complete.');
+    this.fileSelect = document.createElement('input');
+    this.fileSelect.type = 'file';
+    this.fileSelect.multiple = true;
 
-            on_select('fresh upload');
-        }, false);
+    this.template = fs.readFileSync(__dirname + '/templates/browser.html', 'utf8');
 
-        client.addEventListener('error', function transferFailed(evt) {
-            console.log('An error occurred while transferring the file.');
-        }, false);
-
-        client.addEventListener('abort', function transferFailed(evt) {
-            console.log('The transfer has been canceled by the user.');
-        }, false);
-    };
-
-    var elem = document.createElement('div');
-    elem.className = 'modal';
-    elem.id = 'tg-media-modal';
-
-    var input = document.createElement('input');
-    input.type = 'file';
-
-    input.addEventListener('change', handle_upload, true);
-
-    var ractive = new Ractive({
-        el: elem,
-        template: fs.readFileSync(__dirname + '/templates/browser.html', 'utf8'),
+    this.ractive = new Ractive({
+        el: browser.element,
+        template: browser.template,
         data: {
             drop: false,
-            images: []
+            load: false,
+            items: browser.options.items
         }
     });
 
-    ractive.on('show-dropzone', function (event) {
-        this.set('drop', true);
+    this.client = new XMLHttpRequest();
+
+    this.bindActions();
+    this.bindDrop();
+    this.bindUpload();
+};
+
+MediaBrowser.prototype.bindActions = function () {
+    var browser = this;
+
+    this.fileSelect.addEventListener('change', function () {
+        browser.createItem(this);
+    }, true);
+
+    this.ractive.on('select', function (event) {
+        event.original.preventDefault();
+        if (browser.callback) {
+            browser.callback(event.node.href);
+        }
     });
 
-    ractive.on('hide-dropzone', function (event) {
-        this.set('drop', false);
+    this.ractive.on('delete', function (event, id) {
+        event.original.preventDefault();
+        event.original.stopPropagation();
+
+        browser.deleteItem(id);
+    });
+};
+
+MediaBrowser.prototype.bindDrop= function () {
+    var browser = this;
+
+    this.ractive.on('prevent-drag', function (event) {
+        if (event.original.preventDefault) {
+            event.original.preventDefault();
+        } else {
+            event.original.returnValue = false;
+        }
     });
 
-    ractive.on('drag-over', function (event) {
+    this.ractive.on('select-upload', function (event) {
+        event.original.preventDefault();
+        browser.fileSelect.click();
+    });
+
+    this.ractive.on('dropzone', function (event, state) {
+        this.set('drop', state === 'show');
+    });
+
+    this.ractive.on('drag-over', function (event) {
         event.original.preventDefault();
     });
 
-    ractive.on('drop', function (event) {
+    this.ractive.on('drop', function (event) {
         if (event.original.dataTransfer && event.original.dataTransfer.files.length) {
             event.original.preventDefault();
             event.original.stopPropagation();
-            handle_upload.call(event.original.dataTransfer);
             this.set('drop', false);
+            browser.createItem(event.original.dataTransfer);
+        }
+    });
+};
+
+MediaBrowser.prototype.bindUpload = function () {
+    var browser = this;
+
+    this.client.addEventListener('load', function (event) {
+        if (event.target.response) {
+            var result = JSON.parse(event.target.response);
+            if (result.success) {
+                browser.onSuccess(result.success);
+            } else if (result.success) {
+
+            }
+        }
+        browser.ractive.set('load', false);
+    }, true);
+
+    this.client.addEventListener('error', function transferFailed(evt) {
+        browser.ractive.set('load', false);
+    }, false);
+
+    this.client.addEventListener('abort', function transferFailed(evt) {
+        browser.ractive.set('load', false);
+    }, false);
+};
+
+MediaBrowser.prototype.addError = function () {
+
+};
+
+MediaBrowser.prototype.loadItems = function () {
+    var browser = this;
+
+    $.get('/api', function (data) {
+        if (data.success) {
+            browser.options.items = data.success;
+            browser.ractive.set('items', browser.options.items);
+        }
+    });
+};
+
+MediaBrowser.prototype.deleteItem= function (id) {
+    var browser = this;
+
+    $.post('/api/delete', {file: id}, function (data) {
+        if (data.success) {
+            browser.options.items = browser.options.items.filter(function(obj) {
+                return obj.id !== data.success;
+            });
+            browser.ractive.merge('items', browser.options.items);
         }
     });
 
-    ractive.on('select', function (event) {
-        event.original.preventDefault();
-        on_select(event.node.href);
-    });
-
-    ractive.on('select-upload', function (event) {
-        event.original.preventDefault();
-        input.click();
-    });
-
-
-    $.getJSON('/api', function(data) {
-        ractive.set('images', data.images);
-    });
-
-    return elem;
 };
 
+MediaBrowser.prototype.createItem = function (data) {
+    var browser = this;
+    var count = data.files.length;
+    this.ractive.set('load', true);
+
+    var finished = function () {
+        count -= 1;
+        if (count === 0) {
+            browser.ractive.set('load', false);
+        }
+    };
+
+    $.each(data.files, function (i, file) {
+        var formData = new FormData();
+        formData.append('file', file);
+
+        $.ajax({
+            url: '/api/create',
+            type: 'POST',
+            data: formData,
+            cache: false,
+            dataType: 'json',
+            processData: false,
+            contentType: false,
+            success: function(data) {
+                if (data.success) {
+                    browser.options.items.unshift(data.success);
+                    browser.ractive.merge('items', browser.options.items);
+                    if (browser.callback && browser.options.insertOnUpload) {
+                        browser.callback(data.success.path);
+                    }
+                }
+                finished();
+            },
+            error: function(data) {
+                finished();
+            }
+        });
+    });
+};
+
+var browser = null;
 
 exports.tinymce_callback = function (field_name) {
 
-    if (modal === null) {
-
-        modal = create_modal(function (url) {
-            $('#' + field_name).val(url);
-            $(modal).modal('hide');
-        });
-
-        $(modal).modal();
-
-    } else {
-
-        $(modal).modal('show');
+    if (browser === null) {
+        browser = new MediaBrowser();
+        $(browser.element).modal({show: false});
     }
+
+    browser.callback = function (url) {
+        var elem = $('#' + field_name);
+        if (elem.length > 0) {
+            elem.val(url);
+        }
+        $(browser.element).modal('hide');
+    };
+
+    //$(browser.element).off('show.bs.modal').on('show.bs.modal', function () {
+    //    $('.modal-content').css('height', $(window).height() * 0.8);
+    //}).modal('show');
+
+    $(browser.element).modal('show');
 };

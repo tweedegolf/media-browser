@@ -10,19 +10,27 @@
         <span class="fa fa-times"></span>
       </button>
     </div>
-    <div class="modal-body" on-dragenter="show-dropzone">
-      <div class="drop-zone {{^drop}}hide{{/drop}}" on-dragleave="hide-dropzone" on-drop="drop" on-dragover="drag-over"></div>
+    <div class="modal-body" on-dragenter="dropzone:show">
+      <div class="drop-zone {{^drop}}hide{{/drop}}" on-dragleave="dropzone:hide" on-drop="drop" on-dragover="drag-over"></div>
+      <div class="loader {{^load}}hide{{/load}}"></div>
       <div class="row">
-        {{#images}}
-        <div class="col-xs-6 col-md-3">
-          <a on-click="select" href="{{path}}" class="thumbnail">
-            <img src="{{thumb}}" alt="{{name}}">
+        {{#items}}
+        <div class="col-xs-6 col-sm-4 col-md-3 col-lg-2">
+          <a on-click="select" href="{{path}}" class="thumbnail" on-mousedown="prevent-drag" title="{{name}} ({{size}})">
+            {{#thumb}}
+              <img src="{{thumb}}" alt="{{name}}">
+            {{/thumb}}
+            {{#type}}
+              <span class="fa type type-{{type}}"></span><br>
+              <span>{{type}}</span>
+            {{/type}}
             <div class="caption">
+              <span on-click="delete:{{id}}" class="fa fa-trash-o text-danger"></span>
               {{name}}
             </div>
           </a>
         </div>
-        {{/images}}
+        {{/items}}
       </div>
     </div>
     <div class="modal-footer">
