@@ -2,16 +2,8 @@ var $ = require('jquery');
 var Ractive = require('ractive');
 var fs = require('fs');
 
-var extend = function (defaults, options) {
-    var extended = Object.create(defaults);
-    Object.keys(options).map(function (prop) {
-        prop in extended && (extended[prop] = options[prop]);
-    });
-    return extended;
-};
-
 var MediaBrowser = function (options) {
-    this.options = extend(MediaBrowser.DEFAULTS, options || {});
+    this.options = $.extend({}, MediaBrowser.DEFAULTS, options);
 
     this.init();
     this.loadItems();
@@ -44,9 +36,19 @@ MediaBrowser.prototype.init = function () {
         data: {
             drop: false,
             load: false,
-            items: browser.options.items
+            filter: 'all',
+            order: 'newest',
+            items: browser.options.items,
+            icon: function (attribute, value) {
+                if (this.get(attribute) === value) {
+                    return 'fa-check-square-o';
+                }
+                return 'fa-square-o';
+            }
         }
     });
+
+
 
     this.client = new XMLHttpRequest();
 
@@ -67,6 +69,18 @@ MediaBrowser.prototype.bindActions = function () {
         if (browser.callback) {
             browser.callback(event.node.href);
         }
+    });
+
+    this.ractive.on('filter', function (event, filter) {
+        event.original.preventDefault();
+        this.set('filter', filter);
+        browser.loadItems();
+    });
+
+    this.ractive.on('order', function (event, order) {
+        event.original.preventDefault();
+        this.set('order', order);
+        browser.loadItems();
     });
 
     this.ractive.on('delete', function (event, id) {
@@ -142,12 +156,17 @@ MediaBrowser.prototype.addError = function () {
 MediaBrowser.prototype.loadItems = function () {
     var browser = this;
 
-    $.get('/api', function (data) {
-        if (data.success) {
-            browser.options.items = data.success;
-            browser.ractive.set('items', browser.options.items);
+    $.get('/api', {
+            filter: browser.ractive.get('filter'),
+            order: browser.ractive.get('order')
+        },
+        function (data) {
+            if (data.success) {
+                browser.options.items = data.success;
+                browser.ractive.set('items', browser.options.items);
+            }
         }
-    });
+    );
 };
 
 MediaBrowser.prototype.deleteItem= function (id) {

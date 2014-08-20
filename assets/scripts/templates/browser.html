@@ -6,6 +6,92 @@
         <span class="fa fa-upload"></span>
         Upload
       </button>
+      <div class="btn-group">
+        <div class="btn-group">
+          <button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown">
+            <span class="fa fa-filter"></span>
+            Filter
+            <span class="caret"></span>
+          </button>
+          <ul class="dropdown-menu" role="menu">
+            <li role="presentation">
+              <a role="menuitem" href="#" on-click="filter:all">
+                <span class="fa {{ icon('filter', 'all') }}"></span>
+                All
+              </a>
+            </li>
+            <li role="presentation">
+              <a role="menuitem" href="#" on-click="filter:images">
+                <span class="fa {{ icon('filter', 'images') }}"></span>
+                Images
+              </a>
+            </li>
+            <li role="presentation">
+              <a role="menuitem" href="#" on-click="filter:documents">
+                <span class="fa {{ icon('filter', 'documents') }}"></span>
+                Documents
+              </a>
+            </li>
+          </ul>
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown">
+            <span class="fa fa-sort"></span>
+            Sort
+            <span class="caret"></span>
+          </button>
+          <ul class="dropdown-menu" role="menu">
+            <li role="presentation">
+              <a role="menuitem" href="#" on-click="order:newest">
+                <span class="fa {{ icon('order', 'newest') }}"></span>
+                Newest
+              </a>
+            </li>
+            <li role="presentation">
+              <a role="menuitem" href="#" on-click="order:oldest">
+                <span class="fa {{ icon('order', 'oldest') }}"></span>
+                Oldest
+              </a>
+            </li>
+            <li role="presentation">
+              <a role="menuitem" href="#" on-click="order:largest">
+                <span class="fa {{ icon('order', 'size-desc') }}"></span>
+                Largest file size
+              </a>
+            </li>
+            <li role="presentation">
+              <a role="menuitem" href="#" on-click="order:smallest">
+                <span class="fa {{ icon('order', 'size-asc') }}"></span>
+                Smallest file size
+              </a>
+            </li>
+            <li role="presentation">
+              <a role="menuitem" href="#" on-click="order:name-asc">
+                <span class="fa {{ icon('order', 'name-asc') }}"></span>
+                File name A-Z
+              </a>
+            </li>
+            <li role="presentation">
+              <a role="menuitem" href="#" on-click="order:name-desc">
+                <span class="fa {{ icon('order', 'name-desc') }}"></span>
+                File name Z-A
+              </a>
+            </li>
+            <li role="presentation">
+              <a role="menuitem" href="#" on-click="order:type-asc">
+                <span class="fa {{ icon('order', 'type-asc') }}"></span>
+                File type A-Z
+              </a>
+            </li>
+            <li role="presentation">
+              <a role="menuitem" href="#" on-click="order:type-desc">
+                <span class="fa {{ icon('order', 'type-desc') }}"></span>
+                File type Z-A
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
       <button type="button" class="close" data-dismiss="modal">
         <span class="fa fa-times"></span>
       </button>
