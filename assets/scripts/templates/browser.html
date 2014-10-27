@@ -55,13 +55,13 @@
             </li>
             <li role="presentation">
               <a role="menuitem" href="#" on-click="order:largest">
-                <span class="fa {{ icon('order', 'size-desc') }}"></span>
+                <span class="fa {{ icon('order', 'largest') }}"></span>
                 Largest file size
               </a>
             </li>
             <li role="presentation">
               <a role="menuitem" href="#" on-click="order:smallest">
-                <span class="fa {{ icon('order', 'size-asc') }}"></span>
+                <span class="fa {{ icon('order', 'smallest') }}"></span>
                 Smallest file size
               </a>
             </li>
@@ -111,8 +111,21 @@
               <span>{{type}}</span>
             {{/type}}
             <div class="caption">
-              <span on-click="delete:{{id}}" class="fa fa-trash-o text-danger"></span>
+              <span on-click="show-delete:{{id}}" class="fa fa-trash-o text-danger delete-file"></span>
               {{name}}
+            </div>
+            <div class="confirm-delete {{ confirmDialog(id) }}">
+              <p>Permanently delete this file?</p>
+              <div class="btn-group">
+                <button on-click="delete:{{id}}" type="button" class="btn btn-xs btn-danger">
+                  <span class="fa fa-trash-o"></span>
+                  Delete
+                </button>
+                <button on-click="hide-delete:{{id}}"type="button" class="btn btn-xs btn-default">
+                  <span class="fa fa-times"></span>
+                  Cancel
+                </button>
+              </div>
             </div>
           </a>
         </div>

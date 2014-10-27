@@ -24,6 +24,8 @@ MediaBrowser.prototype.init = function () {
     this.element.className = 'modal';
     this.element.id = 'tg-media-modal';
 
+    this.confirm = {};
+
     this.fileSelect = document.createElement('input');
     this.fileSelect.type = 'file';
     this.fileSelect.multiple = true;
@@ -39,16 +41,21 @@ MediaBrowser.prototype.init = function () {
             filter: 'all',
             order: 'newest',
             items: browser.options.items,
+            confirm: browser.confirm,
             icon: function (attribute, value) {
                 if (this.get(attribute) === value) {
                     return 'fa-check-square-o';
                 }
                 return 'fa-square-o';
+            },
+            confirmDialog: function (id) {
+                if (browser.confirm[id]) {
+                    return '';
+                }
+                return 'hide';
             }
         }
     });
-
-
 
     this.client = new XMLHttpRequest();
 
@@ -83,11 +90,28 @@ MediaBrowser.prototype.bindActions = function () {
         browser.loadItems();
     });
 
+    this.ractive.on('show-delete', function (event, id) {
+        event.original.preventDefault();
+        event.original.stopPropagation();
+
+        browser.confirm[id] = true;
+        this.set('confirm', browser.confirm);
+    });
+
+    this.ractive.on('hide-delete', function (event, id) {
+        event.original.preventDefault();
+        event.original.stopPropagation();
+
+        delete browser.confirm[id];
+        this.set('confirm', browser.confirm);
+    });
+
     this.ractive.on('delete', function (event, id) {
         event.original.preventDefault();
         event.original.stopPropagation();
 
         browser.deleteItem(id);
+        this.set('confirm', browser.confirm);
     });
 };
 
@@ -169,7 +193,7 @@ MediaBrowser.prototype.loadItems = function () {
     );
 };
 
-MediaBrowser.prototype.deleteItem= function (id) {
+MediaBrowser.prototype.deleteItem = function (id) {
     var browser = this;
 
     $.post('/api/delete', {file: id}, function (data) {
@@ -241,9 +265,9 @@ exports.tinymce_callback = function (field_name) {
         $(browser.element).modal('hide');
     };
 
-    //$(browser.element).off('show.bs.modal').on('show.bs.modal', function () {
+    // $(browser.element).off('show.bs.modal').on('show.bs.modal', function () {
     //    $('.modal-content').css('height', $(window).height() * 0.8);
-    //}).modal('show');
+    // }).modal('show');
 
     $(browser.element).modal('show');
 };

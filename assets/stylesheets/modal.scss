@@ -16,6 +16,10 @@
     max-width: 95%;
     max-height: 95%;
 
+    .modal-content {
+      margin-bottom: 30px;
+    }
+
     .drop-zone, .loader {
 
       position: absolute;
@@ -67,6 +71,27 @@
 
       .thumbnail {
 
+        .confirm-delete {
+          position: absolute;
+          background-color: rgba(0, 0, 0, 0.8);
+          width: 100%;
+          height: 100%;
+          top: 0;
+          left: 0;
+          padding: 15px;
+
+          p {
+            color: #fff;
+          }
+
+          .btn-group {
+            position: absolute;
+            bottom: 10px;
+            left: 7px;
+            width: 100%;
+          }
+        }
+
         background-color: #f6f6f6;
         position: relative;
         text-align: center;
@@ -94,7 +119,7 @@
           margin-bottom: 20px;
         }
 
-        .fa-trash-o {
+        .delete-file {
 
           display: none;
           padding: 2px 4px;
