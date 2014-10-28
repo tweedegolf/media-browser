@@ -1,42 +1,73 @@
 var $ = require('jquery');
 var Ractive = require('ractive');
 
+/**
+ * MediaBrowser class
+ * Holds all functionalities of the tinyMCE media bropwser modal,
+ * Like selecting, uploading or deleting files
+ * @param {object} options the options object, see MediaBrowser.DEFAULTS for the defaults
+ */
 var MediaBrowser = function (options) {
     this.options = $.extend({}, MediaBrowser.DEFAULTS, options);
 
+    if (this.options.modalUrl === null) {
+        console.log('Please provide the relative URL to the media modal template');
+        return this;
+    }
+
+    // holds the array of files
     this.items = [];
+
+    // holds an array of possible error messages
     this.errors = [];
 
+    // load the modal contents and bind action listeners
     this.init();
 
     return this;
 };
 
+/**
+ * Default settings/options
+ * @type {Object}
+ */
 MediaBrowser.DEFAULTS = {
-    modalUrl: null,
-    callback: null,
-    insertOnUpload: false,
-    afterInit: function () {}
+    modalUrl: null,               // url to the media browser modal template
+    callback: function () {},     // file click callback
+    insertOnUpload: true,         // insert new files in de modal after upload
+    afterInit: function () {}     // callback after the browser is loaded
 };
 
+/**
+ * Initialize the modal
+ */
 MediaBrowser.prototype.init = function () {
     this.createElements();
     this.loadModal();
 };
 
+/**
+ * Create root element and (hidden) file upload element
+ */
 MediaBrowser.prototype.createElements = function () {
     // div containing the modal
     this.element = document.createElement('div');
     this.element.className = 'modal';
     this.element.id = 'tg-media-modal';
+
     // hidden input element for file uploads
     this.fileSelect = document.createElement('input');
     this.fileSelect.type = 'file';
     this.fileSelect.multiple = true;
 
+    // ajax file upload class
     this.client = new XMLHttpRequest();
 };
 
+/**
+ * Load modal template for Ractivejs instance
+ * See http://www.ractivejs.org/
+ */
 MediaBrowser.prototype.loadModal = function () {
     var that = this;
 
@@ -46,6 +77,10 @@ MediaBrowser.prototype.loadModal = function () {
     });
 };
 
+/**
+ * Initiate Ractive
+ * See http://www.ractivejs.org/
+ */
 MediaBrowser.prototype.bindRactive = function () {
     var that = this;
 
@@ -68,22 +103,27 @@ MediaBrowser.prototype.bindRactive = function () {
         }
     });
 
+    // bind ractive actions
     this.bindActions();
     this.bindDrop();
     this.bindUpload();
 
+    // after init callback
     this.options.afterInit(this.element);
 
+    // populate the modal with files
     this.loadItems();
 };
 
 MediaBrowser.prototype.bindActions = function () {
     var that = this;
 
+    // when files are selected using the file upload button
     this.fileSelect.addEventListener('change', function () {
         that.createItems(this);
     }, true);
 
+    // when a file is clicked
     this.ractive.on('select', function (event) {
         event.original.preventDefault();
         if (that.callback) {
@@ -91,18 +131,21 @@ MediaBrowser.prototype.bindActions = function () {
         }
     });
 
+    // when a (new) filter is selected
     this.ractive.on('filter', function (event, filter) {
         event.original.preventDefault();
         this.set('filter', filter);
         that.loadItems();
     });
 
+    // when a (new) sort order is selected
     this.ractive.on('order', function (event, order) {
         event.original.preventDefault();
         this.set('order', order);
         that.loadItems();
     });
 
+    // when the trash can is clicked at the bottom left of a file block
     this.ractive.on('show-delete', function (event, id) {
         event.original.preventDefault();
         event.original.stopPropagation();
@@ -110,6 +153,7 @@ MediaBrowser.prototype.bindActions = function () {
         this.set(event.keypath + '.confirm', true);
     });
 
+    // when the delete confirm message is canceled
     this.ractive.on('hide-delete', function (event, id) {
         event.original.preventDefault();
         event.original.stopPropagation();
@@ -117,6 +161,7 @@ MediaBrowser.prototype.bindActions = function () {
         this.set(event.keypath + '.confirm', false);
     });
 
+    // when the delete confirm message is confirmed
     this.ractive.on('delete', function (event, id) {
         event.original.preventDefault();
         event.original.stopPropagation();
@@ -126,9 +171,13 @@ MediaBrowser.prototype.bindActions = function () {
     });
 };
 
+/**
+ * Handle a file drop with possibly multiple files
+ */
 MediaBrowser.prototype.bindDrop= function () {
     var that = this;
 
+    // prevent dragging thumbnail images
     this.ractive.on('prevent-drag', function (event) {
         if (event.original.preventDefault) {
             event.original.preventDefault();
@@ -137,24 +186,32 @@ MediaBrowser.prototype.bindDrop= function () {
         }
     });
 
+    // click the file select button
     this.ractive.on('select-upload', function (event) {
         event.original.preventDefault();
         that.fileSelect.click();
     });
 
+    // when a file hovers over the modal -> show the dropzone
     this.ractive.on('dropzone', function (event, state) {
         this.set('drop', state === 'show');
     });
 
+    // when a file is dragged over the modal
     this.ractive.on('drag-over', function (event) {
         event.original.preventDefault();
     });
 
+    // shen a file is dropped on the modal
     this.ractive.on('drop', function (event) {
         if (event.original.dataTransfer && event.original.dataTransfer.files.length) {
             event.original.preventDefault();
             event.original.stopPropagation();
+
+            // hide the drop zone
             this.set('drop', false);
+
+            // upload the file or files
             that.createItems(event.original.dataTransfer);
         }
     });
