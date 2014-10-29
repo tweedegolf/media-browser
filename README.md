@@ -7,9 +7,11 @@ Frond-end scripts for the [tweedegolf media bundle](https://github.com/tweedegol
 Add the media bundle to `bower.json`:
 
 ```json
-"dependencies": {
-    "tweedegolf-media-browser": "0.1.0"
-},
+{
+    "dependencies": {
+        "tweedegolf-media-browser": "0.1.0"
+    }
+}
 ```
 
 ## Usage
