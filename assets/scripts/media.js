@@ -34,7 +34,7 @@ var MediaBrowser = function (options) {
 MediaBrowser.DEFAULTS = {
     modalUrl: null,               // url to the media browser modal template
     callback: function () {},     // file click callback
-    insertOnUpload: true,         // insert new files in de modal after upload
+    insertOnUpload: false,        // insert new in the tinyMCE dialog after upload
     afterInit: function () {}     // callback after the browser is loaded
 };
 
@@ -103,6 +103,9 @@ MediaBrowser.prototype.bindRactive = function () {
         }
     });
 
+    // store reference to content div
+    this.contentElem = this.ractive.find('.modal-content');
+
     // bind ractive actions
     this.bindActions();
     this.bindDrop();
@@ -126,6 +129,10 @@ MediaBrowser.prototype.bindActions = function () {
     // when a file is clicked
     this.ractive.on('select', function (event) {
         event.original.preventDefault();
+        // ignore click events on the delete confirm overlay
+        if ($(event.original.target).is('.confirm-delete')) {
+            return;
+        }
         if (that.callback) {
             that.callback(event.node.href);
         }
@@ -217,30 +224,40 @@ MediaBrowser.prototype.bindDrop= function () {
     });
 };
 
+/**
+ * Bind ajax upload callbacks
+ */
 MediaBrowser.prototype.bindUpload = function () {
     var that = this;
 
+    // when an upload is completed
     this.client.addEventListener('load', function (event) {
         if (event.target.response) {
             var result = JSON.parse(event.target.response);
             if (result.success) {
                 that.onSuccess(result.success);
-            } else if (result.success) {
-
+            } else if (result.errors) {
+                that.addErrors(data.errors);
             }
         }
         that.ractive.set('load', false);
     }, true);
 
+    // when an error occurs during the upload
     this.client.addEventListener('error', function transferFailed(evt) {
         that.ractive.set('load', false);
     }, false);
 
+    // when the upload is aborted (by the user)
     this.client.addEventListener('abort', function transferFailed(evt) {
         that.ractive.set('load', false);
     }, false);
 };
 
+/**
+ * Show error messages in the modal
+ * @param {[type]} errors [description]
+ */
 MediaBrowser.prototype.addErrors = function (errors) {
     for (var i = 0; i < errors.length; i += 1) {
         this.errors.push({
@@ -250,9 +267,12 @@ MediaBrowser.prototype.addErrors = function (errors) {
     }
 };
 
+/**
+ * Load a json array of file objects, based on a optional filter and sorting
+ */
 MediaBrowser.prototype.loadItems = function () {
     var that = this;
-    var url = this.ractive.find('.modal-content').getAttribute('data-index');
+    var url = this.contentElem.getAttribute('data-index');
 
     $.get(url, {
             filter: that.ractive.get('filter'),
@@ -274,11 +294,15 @@ MediaBrowser.prototype.loadItems = function () {
     );
 };
 
+/**
+ * Call the api to delete a certain file
+ * @param {number/string} id
+ */
 MediaBrowser.prototype.deleteItem = function (id) {
     var that = this;
-    var url = this.ractive.find('.modal-content').getAttribute('data-delete');
+    var url = this.contentElem.getAttribute('data-delete');
 
-    $.post('/api/delete', {file: id}, function (data) {
+    $.post(url, {file: id}, function (data) {
         if (data.success) {
             that.items = that.items.filter(function(obj) {
                 return obj.id !== data.success;
@@ -291,30 +315,44 @@ MediaBrowser.prototype.deleteItem = function (id) {
 
 };
 
+/**
+ * Ajax upload a collection of files
+ * @param {object} data a list of file objects
+ */
 MediaBrowser.prototype.createItems = function (data) {
     var that = this;
     var count = data.files.length;
-    var url = this.ractive.find('.modal-content').getAttribute('data-create');
+    var url = this.contentElem.getAttribute('data-create');
 
+    // show loading animation
     this.ractive.set('load', true);
 
+    // callback after each file upload
+    // only when all files are uploaded, the loading animation in hidden
     var finished = function () {
         count -= 1;
         if (count === 0) {
             that.ractive.set('load', false);
+            // reset filters, since the files are inserted in the view
             // that.ractive.set('filter', 'all');
             // that.ractive.set('order', 'newest');
         }
     };
 
+    // loop trough the file array to start ajax uploads
     $.each(data.files, function (i, file) {
         var formData = new FormData();
         formData.append('file', file);
-
         that.createItem(url, formData, finished);
     });
 };
 
+/**
+ * Upload a file via ajax
+ * @param {string} url        url to the api upload action
+ * @param {FormData} formData the file data
+ * @param {function} finished callback function executed after upload finished
+ */
 MediaBrowser.prototype.createItem = function (url, formData, finished) {
     var that = this;
 
@@ -328,8 +366,12 @@ MediaBrowser.prototype.createItem = function (url, formData, finished) {
         contentType: false,
         success: function(data) {
             if (data.success) {
+
+                // append new files to list of files
                 that.items.unshift(data.success);
                 that.ractive.merge('items', that.items);
+
+                // optionally cal the callback
                 if (that.callback && that.options.insertOnUpload) {
                     that.callback(data.success.path);
                 }
