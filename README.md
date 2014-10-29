@@ -1,7 +1,7 @@
 tweedegolf-media-browser
 ========================
 
-Frond-end scripts for the [tweedegolf media bundle](https://github.com/tweedegolf/media-bundle). See the tweedegolf media bundle](https://github.com/tweedegolf/media-bundle) for a complete installation guide and documentation.
+Frond-end scripts for the [tweedegolf media bundle](https://github.com/tweedegolf/media-bundle). See the [tweedegolf media bundle](https://github.com/tweedegolf/media-bundle) for a complete installation guide and documentation.
 
 ## Installation and configuration
 Add the media bundle to `bower.json`:
