@@ -134,7 +134,7 @@ MediaBrowser.prototype.bindActions = function () {
             return;
         }
         if (that.callback) {
-            that.callback(event.node.href);
+            that.callback(event.node.href, event.context);
         }
     });
 
