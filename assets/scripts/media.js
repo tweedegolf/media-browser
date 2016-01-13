@@ -3,7 +3,7 @@ var Ractive = require('ractive');
 
 /**
  * MediaBrowser class
- * Holds all functionalities of the tinyMCE media bropwser modal,
+ * Holds all functionalities of the tinyMCE media browser modal,
  * Like selecting, uploading or deleting files
  * @param {object} options the options object, see MediaBrowser.DEFAULTS for the defaults
  */
@@ -17,6 +17,15 @@ var MediaBrowser = function (options) {
 
     // holds the array of files
     this.items = [];
+
+    // holds the pages of paginator
+    this.pages = [];
+
+    // holds the current page of paginator
+    this.page = 1;
+
+    // holds the total amount of items in paginator
+    this.total = 0;
 
     // holds an array of possible error messages
     this.errors = [];
@@ -99,6 +108,11 @@ MediaBrowser.prototype.bindRactive = function () {
                     return 'fa-check-square-o';
                 }
                 return 'fa-square-o';
+            },
+            pageClass: function (page, active) {
+                active = typeof active !== 'undefined' ? active : 1;
+
+                return page === active ? 'active' : '';
             }
         }
     });
@@ -138,10 +152,18 @@ MediaBrowser.prototype.bindActions = function () {
         }
     });
 
+    // when a page is clicked
+    this.ractive.on('changepage', function (event, page) {
+        event.original.preventDefault();
+        this.set('page', page);
+        that.loadItems();
+    });
+
     // when a (new) filter is selected
     this.ractive.on('filter', function (event, filter) {
         event.original.preventDefault();
         this.set('filter', filter);
+        this.set('page', 1);  // reset page
         that.loadItems();
     });
 
@@ -273,15 +295,30 @@ MediaBrowser.prototype.addErrors = function (errors) {
 MediaBrowser.prototype.loadItems = function () {
     var that = this;
     var url = this.contentElem.getAttribute('data-index');
+    var buildPages = function (total, max, page) {
+        page = typeof page !== 'undefined' ? page : 1;
+        var pages = [], totPages = Math.ceil(total / max);
+        for (var i = 1; i <= totPages; i ++) {
+            pages.push({num: i, current: i === page});
+        }
+
+        return pages;
+    };
 
     $.get(url, {
             filter: that.ractive.get('filter'),
-            order: that.ractive.get('order')
+            order: that.ractive.get('order'),
+            page: that.ractive.get('page')
         },
         function (data) {
             if (data.success) {
                 that.items = data.success;
+                that.total = data.total;
+                that.max  = data.max
+                that.pages = buildPages(data.total, data.max, data.page);
                 that.ractive.set('items', that.items);
+                that.ractive.set('pages', that.pages);
+                that.ractive.set('total', that.total);
 
                 $('.thumbnail', that.element).tooltip({
                     animation: false,
